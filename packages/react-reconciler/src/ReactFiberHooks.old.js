@@ -79,7 +79,6 @@ import {
   requestEventTime,
   warnIfNotCurrentlyActingEffectsInDEV,
   warnIfNotCurrentlyActingUpdatesInDev,
-  warnIfNotScopedWithMatchingAct,
   markSkippedUpdateLanes,
   isInterleavedUpdate,
 } from './ReactFiberWorkLoop.old';
@@ -2012,7 +2011,6 @@ function dispatchAction<S, A>(
     if (__DEV__) {
       // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
       if ('undefined' !== typeof jest) {
-        warnIfNotScopedWithMatchingAct(fiber);
         warnIfNotCurrentlyActingUpdatesInDev(fiber);
       }
     }
