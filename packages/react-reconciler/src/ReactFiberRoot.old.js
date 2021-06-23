@@ -101,12 +101,13 @@ export function createFiberRoot(
   isStrictMode: boolean,
   concurrentUpdatesByDefaultOverride: null | boolean,
 ): FiberRoot {
+  // TODO: FiberRootNode
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
   }
 
-  // Cyclic construction. This cheats the type system right now because
+  // Cyclic(循環的な、周期的な) construction. This cheats the type system right now because
   // stateNode is any.
   const uninitializedFiber = createHostRootFiber(
     tag,

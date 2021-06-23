@@ -102,11 +102,12 @@ function getReactRootElementInContainer(container: any) {
 
 function legacyCreateRootFromDOMContainer(
   container: Container,
-  forceHydrate: boolean,
+  forceHydrate: boolean, // false when called from render
 ): RootType {
   // First clear any existing content.
   if (!forceHydrate) {
     let rootSibling;
+    // 最初はlastChildも存在しない
     while ((rootSibling = container.lastChild)) {
       container.removeChild(rootSibling);
     }
@@ -136,10 +137,10 @@ function warnOnInvalidCallback(callback: mixed, callerName: string): void {
 }
 
 function legacyRenderSubtreeIntoContainer(
-  parentComponent: ?React$Component<any, any>,
+  parentComponent: ?React$Component<any, any>, // null(renderからの呼び出し時)
   children: ReactNodeList,
   container: Container,
-  forceHydrate: boolean,
+  forceHydrate: boolean, //renderからの呼び出しはfalse
   callback: ?Function,
 ) {
   if (__DEV__) {
@@ -148,12 +149,15 @@ function legacyRenderSubtreeIntoContainer(
   }
 
   let root = container._reactRootContainer;
+  // _reactRootContainer は最初はundefinedっぽいがどうだ？呼び出されていないように見える
   let fiberRoot: FiberRoot;
   if (!root) {
+    // ルートが存在しないということはマウント（最初の呼び出し）とわかる
     // Initial mount
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
       forceHydrate,
+      // ここconsole.logしたい root, container._reactRootContainerは何が入っているか。　=> fiber
     );
     fiberRoot = root._internalRoot;
     if (typeof callback === 'function') {

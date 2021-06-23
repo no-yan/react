@@ -271,7 +271,7 @@ export function updateContainer(
     onScheduleRoot(container, element);
   }
   const current = container.current;
-  const eventTime = requestEventTime();
+  const eventTime = requestEventTime(); // このレンダーが呼ばれた最初の時間を得る
   if (__DEV__) {
     // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
     if ('undefined' !== typeof jest) {
@@ -279,10 +279,10 @@ export function updateContainer(
       warnIfNotScopedWithMatchingAct(current);
     }
   }
-  const lane = requestUpdateLane(current);
+  const lane = requestUpdateLane(current); //同期モードであればsyncLane = 1 がかえる
 
   if (enableSchedulingProfiler) {
-    markRenderScheduled(lane);
+    markRenderScheduled(lane); //for profiler
   }
 
   const context = getContextForSubtree(parentComponent);
@@ -361,6 +361,15 @@ export function getPublicRootInstance(
   switch (containerFiber.child.tag) {
     case HostComponent:
       return getPublicInstance(containerFiber.child.stateNode);
+    // https://postd.cc/react-fiber-architecture/
+    // ホストコンポーネント（host component）
+    // Reactアプリケーションのリーフノード。レンダリング環境に固有（例：ブラウザアプリでは、 div 、 span など）。JSXでは、小文字のタグ名で示される。
+
+    // 概念上、fiberのoutputは、関数の戻り値です。
+
+    // どのfiberも最終的にoutputを持ちますが、outputは ホストコンポーネント によってリーフノードでのみ生成されます。outputはその後、ツリーの上方へ移されるのです。
+
+    // outputは、レンダリング環境へ変更をフラッシュできるようにするため、最終的にレンダラに渡されます。outputが生成・更新される方法を定義するのは、レンダラの役目となります。
     default:
       return containerFiber.child.stateNode;
   }

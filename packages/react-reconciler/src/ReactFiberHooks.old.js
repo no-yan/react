@@ -647,6 +647,7 @@ function updateWorkInProgressHook(): Hook {
     nextWorkInProgressHook = workInProgressHook.next;
 
     currentHook = nextCurrentHook;
+    // TODO: currentHookの代入
   } else {
     // Clone from the current hook.
 
@@ -655,7 +656,7 @@ function updateWorkInProgressHook(): Hook {
       'Rendered more hooks than during the previous render.',
     );
     currentHook = nextCurrentHook;
-
+    // TODO: currentHookの代入
     const newHook: Hook = {
       memoizedState: currentHook.memoizedState,
 

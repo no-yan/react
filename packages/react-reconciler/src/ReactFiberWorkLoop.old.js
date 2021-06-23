@@ -361,6 +361,7 @@ export function getWorkInProgressRoot(): FiberRoot | null {
 
 export function requestEventTime() {
   if ((executionContext & (RenderContext | CommitContext)) !== NoContext) {
+    // Render/Commit Context が立っていない
     // We're inside React, so it's fine to read the actual time.
     return now();
   }
@@ -381,8 +382,18 @@ export function getCurrentTime() {
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
   const mode = fiber.mode;
+  // Bitfield that describes properties about the fiber and its subtree. E.g.
+  // the ConcurrentMode flag indicates whether the subtree should be async-by-
+  // default. When a fiber is created, it inherits the mode of its
+  // parent. Additional flags can be set at creation time, but after that the
+  // value should remain unchanged throughout the fiber's lifetime, particularly
+  // before its child fibers are created.
+  // NoMode,
+  // StrictLegacyMode,
+  // ProfileMode,
+  // ConcurrentMode,
   if ((mode & ConcurrentMode) === NoMode) {
-    return (SyncLane: Lane);
+    return (SyncLane: Lane); // concurrentMode でなければ SyncLaneのビットフィールドを返してあげる。
   } else if (
     !deferRenderPhaseUpdateToNextBatch &&
     (executionContext & RenderContext) !== NoContext &&
@@ -1084,8 +1095,8 @@ export function batchedUpdates<A, R>(fn: A => R, a: A): R {
     // If there were legacy sync updates, flush them at the end of the outer
     // most batchedUpdates-like method.
     if (executionContext === NoContext) {
-      resetRenderTimer();
-      flushSyncCallbacksOnlyInLegacyMode();
+      resetRenderTimer(); // flushするので、タイマーをリセットするぞ
+      flushSyncCallbacksOnlyInLegacyMode(); // syncqueue内のcallbackをを実行する。
     }
   }
 }
