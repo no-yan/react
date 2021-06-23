@@ -1629,6 +1629,8 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         return;
       }
     } else {
+      // Suspenseとかなにかthrowされるときに立ち寄る場所
+      // Suspenseの場合 flags & shouldCapture ? workInProgress : null
       // This fiber did not complete because something threw. Pop values off
       // the stack without entering the complete phase. If this is a boundary,
       // capture values if possible.
@@ -1637,6 +1639,8 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       // Because this fiber did not complete, don't reset its lanes.
 
       if (next !== null) {
+        // Should CaptureがオンになっているのでunwindWorkはworkingProgressを返す。
+        // performUnitOfWorkに戻って、ここで返されたworkInProgressを処理する
         // If completing this work spawned new work, do that next. We'll come
         // back here again.
         // Since we're restarting, remove anything that is not a host effect
@@ -1671,6 +1675,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       }
     }
 
+    //兄弟か親に移動する
     const siblingFiber = completedWork.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.

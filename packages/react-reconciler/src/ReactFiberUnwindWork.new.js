@@ -99,6 +99,7 @@ function unwindWork(workInProgress: Fiber, renderLanes: Lanes) {
       return null;
     }
     case SuspenseComponent: {
+      // ShouldCaptureがflagsに入っていると、workInProgressを、それ以外はnullを返す。
       popSuspenseContext(workInProgress);
       if (enableSuspenseServerRenderer) {
         const suspenseState: null | SuspenseState =
@@ -115,6 +116,9 @@ function unwindWork(workInProgress: Fiber, renderLanes: Lanes) {
       const flags = workInProgress.flags;
       if (flags & ShouldCapture) {
         workInProgress.flags = (flags & ~ShouldCapture) | DidCapture;
+        // flags & ~bit で行うのは、flags から bitフラグを消すこと
+        // ~bit で特定のbit以外を全部たてる
+        // flags & ~bit で、指定されたbit以外とflagをマージする
         // Captured a suspense effect. Re-render the boundary.
         if (
           enableProfilerTimer &&
