@@ -417,6 +417,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // The opaque type returned by the host config is internally a lane, so we can
   // use that directly.
   // TODO: Move this type conversion to the event priority module.
+  // getCurrentUpdatePriorityでグローバル変数のcurrentUpdatePriorityの値を得る
   const updateLane: Lane = (getCurrentUpdatePriority(): any);
   if (updateLane !== NoLane) {
     return updateLane;
@@ -701,6 +702,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   } else {
     let schedulerPriorityLevel;
     switch (lanesToEventPriority(nextLanes)) {
+      // 最も優先度の高いlaneを取得する
       case DiscreteEventPriority:
         schedulerPriorityLevel = ImmediateSchedulerPriority;
         break;
@@ -717,6 +719,16 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
     }
+
+    // Schedulerを呼び出して、startTime, expirationTimeを設定する
+    //    var newTask = {
+    //   id: taskIdCounter++,
+    //   callback,
+    //   priorityLevel,
+    //   startTime,
+    //   expirationTime,
+    //   sortIndex: -1,
+    // };
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
       performConcurrentWorkOnRoot.bind(null, root),
@@ -1562,6 +1574,7 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
 /** @noinline */
 function workLoopConcurrent() {
   // Perform work until Scheduler asks us to yield
+  // sholdYieldは「仕事辞めてブラウザに明け渡しなさい」命令
   while (workInProgress !== null && !shouldYield()) {
     performUnitOfWork(workInProgress);
   }
@@ -1580,11 +1593,12 @@ function performUnitOfWork(unitOfWork: Fiber): void {
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
+    // 基本的にこっち
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
   }
 
   resetCurrentDebugFiberInDEV();
-  unitOfWork.memoizedProps = unitOfWork.pendingProps;
+  unitOfWork.memoizedProps = unitOfWork.pendingProps; // TODO: メモ化はどこではいるか
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     completeUnitOfWork(unitOfWork);

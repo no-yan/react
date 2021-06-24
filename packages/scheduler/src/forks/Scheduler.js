@@ -174,6 +174,7 @@ function flushWork(hasTimeRemaining, initialTime) {
   }
 }
 
+// ここがメイン。
 function workLoop(hasTimeRemaining, initialTime) {
   let currentTime = initialTime;
   advanceTimers(currentTime);
@@ -189,6 +190,7 @@ function workLoop(hasTimeRemaining, initialTime) {
       // This currentTask hasn't expired, and we've reached the deadline.
       break;
     }
+    // TODO:このcallbackに何が入っているか調べる
     const callback = currentTask.callback;
     if (typeof callback === 'function') {
       currentTask.callback = null;

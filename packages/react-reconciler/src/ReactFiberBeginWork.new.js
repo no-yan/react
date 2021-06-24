@@ -3261,6 +3261,7 @@ function beginWork(
 
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
+    // メモ化されるときここがどうメモ化されるのか →渡される側だからええのか。memorizedPropsはおそらく前のfiberの値を持っているだけだからそこも問題ない
 
     if (
       oldProps !== newProps ||

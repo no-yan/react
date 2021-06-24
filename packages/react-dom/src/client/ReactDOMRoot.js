@@ -144,7 +144,7 @@ export function createRoot(
         ? options.unstable_concurrentUpdatesByDefault
         : null;
   }
-
+  // なぜ直接createFiberRootを呼ばずにcontainerを経由させているのか？implみたいなもの？
   const root = createContainer(
     container,
     ConcurrentRoot,

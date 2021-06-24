@@ -489,6 +489,7 @@ export function claimNextTransitionLane(): Lane {
   const lane = nextTransitionLane;
   nextTransitionLane <<= 1;
   if ((nextTransitionLane & TransitionLanes) === 0) {
+    // transitionLanesはTransitionでつかえるbit全てが立っている。ここで、使えるbitか確認している。bitの個数は16?なので上限に達すると使い回す
     nextTransitionLane = TransitionLane1;
   }
   return lane;
