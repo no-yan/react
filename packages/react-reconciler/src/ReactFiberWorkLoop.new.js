@@ -738,7 +738,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   root.callbackPriority = newCallbackPriority;
   root.callbackNode = newCallbackNode;
 }
-
+// エントリーポイント
 // This is the entry point for every concurrent task, i.e. anything that
 // goes through Scheduler.
 function performConcurrentWorkOnRoot(root, didTimeout) {

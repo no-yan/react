@@ -120,10 +120,13 @@ function handleTimeout(currentTime) {
   advanceTimers(currentTime);
 
   if (!isHostCallbackScheduled) {
+    // deadLineまでtaskが完了せず、そのまま中断した時、残りのtaskを再開する
     if (peek(taskQueue) !== null) {
       isHostCallbackScheduled = true;
       requestHostCallback(flushWork);
     } else {
+      // timerQueueからtaskを引っ張ってくる
+      // 開始のタイミングを指定し、Callbackがそのタイミングで呼ばれるように指定する
       const firstTimer = peek(timerQueue);
       if (firstTimer !== null) {
         requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
@@ -177,6 +180,7 @@ function flushWork(hasTimeRemaining, initialTime) {
 // ここがメイン。
 function workLoop(hasTimeRemaining, initialTime) {
   let currentTime = initialTime;
+  // 時計を現在時刻に進める
   advanceTimers(currentTime);
   currentTask = peek(taskQueue);
   while (
@@ -184,6 +188,7 @@ function workLoop(hasTimeRemaining, initialTime) {
     !(enableSchedulerDebugging && isSchedulerPaused)
   ) {
     if (
+      // timeoutになったらループをぬける
       currentTask.expirationTime > currentTime &&
       (!hasTimeRemaining || shouldYieldToHost())
     ) {
@@ -339,6 +344,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
     startTime,
     expirationTime,
     sortIndex: -1,
+    // このままだと、timerQueueのソートで先頭にでてくる
   };
   if (enableProfiling) {
     newTask.isQueued = false;
@@ -347,11 +353,14 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
   if (startTime > currentTime) {
     // This is a delayed task.
     newTask.sortIndex = startTime;
+    // あとでやるリストに入れる
     push(timerQueue, newTask);
+    // すぐやるtaskがなくて、newtaskが直近のtaskになる
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
       // All tasks are delayed, and this is the task with the earliest delay.
       if (isHostTimeoutScheduled) {
         // Cancel an existing timeout.
+        //なぜって、newTask以外のものがスケジュールされているから
         cancelHostTimeout();
       } else {
         isHostTimeoutScheduled = true;
@@ -359,6 +368,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
       // Schedule a timeout.
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
+    //すぐやるtaskがあるか、newtaskが直近のtaskでない
   } else {
     newTask.sortIndex = expirationTime;
     push(taskQueue, newTask);
@@ -539,7 +549,7 @@ if (typeof localSetImmediate === 'function') {
   // (Even though this is a DOM fork of the Scheduler, you could get here
   // with a mix of Node.js 15+, which has a MessageChannel, and jsdom.)
   // https://github.com/facebook/react/issues/20756
-  //
+
   // But also, it runs earlier which is the semantic we want.
   // If other browsers ever implement it, it's better to use it.
   // Although both of these would be inferior to native scheduling.
@@ -551,6 +561,7 @@ if (typeof localSetImmediate === 'function') {
   // We prefer MessageChannel because of the 4ms setTimeout clamping.
   const channel = new MessageChannel();
   const port = channel.port2;
+  //メッセージ受信時のイベントハンドラ。port1は対となるpot2のMessagePortからメッセージを受信する
   channel.port1.onmessage = performWorkUntilDeadline;
   schedulePerformWorkUntilDeadline = () => {
     port.postMessage(null);
