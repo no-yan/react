@@ -531,4 +531,175 @@ describe('ReactDOMServerHydration', () => {
       'Warning: Did not expect server HTML to contain a <p> in <div>',
     );
   });
+
+  // for study
+  it('should generate simple markup', () => {
+    const response = ReactDOMServer.renderToString(<span>hello world</span>);
+    expect(response).toMatch(new RegExp('<span' + '>hello world</span>'));
+  });
+  it('should warn text difference', () => {
+    const element = document.createElement('div');
+    element.id = 'root';
+    document.body.appendChild(element);
+    const TestComponent = ({name}) => <span>Hello, {name}!</span>;
+    element.innerHTML = ReactDOMServer.renderToString(
+      <TestComponent name={'x'} />,
+    );
+    expect(document.getElementById('root').innerHTML).toMatch(
+      new RegExp('<span>' + 'Hello, <!-- -->x<!-- -->!' + '</span>'),
+    );
+    try {
+      expect(() => {
+        ReactDOM.hydrate(<TestComponent name="y" />, element);
+        // }).toErrorDev('Text content did not match. Server: "x" Client: "y"');
+      }).toErrorDev(
+        'Warning: Text content did not match. Server: "x" Client: "y"',
+      );
+    } finally {
+      delete document.documentMode;
+    }
+  });
+
+  it('should warn different id', () => {
+    const element = document.createElement('div');
+    element.id = 'root';
+    document.body.appendChild(element);
+    const TestComponent = ({id}) => <span id={id}>Hello</span>;
+    element.innerHTML = ReactDOMServer.renderToString(<TestComponent id={1} />);
+
+    expect(element.innerHTML).toMatch('<span id="1">Hello</span>');
+
+    try {
+      expect(() => {
+        ReactDOM.hydrate(<TestComponent id={2} />, element);
+      }).toErrorDev(
+        'Warning: Prop `id` did not match. Server: "1" Client: "2"',
+      );
+    } finally {
+      delete document.documentMode;
+    }
+  });
+
+  it('should increase useId value', () => {
+    const defaultContext = {
+      prefix: 0,
+      current: 0,
+    };
+    const IdContext = React.createContext(defaultContext);
+
+    function useId(defaultId) {
+      const context = React.useContext(IdContext);
+      return React.useMemo(
+        () => defaultId || `id-${context.prefix}-${++context.current}`,
+        [defaultId, context],
+      );
+    }
+    const Test = () => {
+      const a = useId();
+      expect(a).toBe('id-0-1');
+      const b = useId();
+      expect(b).toBe('id-0-2');
+    };
+
+    ReactDOM.render(<Test />, document.createElement('div'));
+  });
+
+  it('should count twice', () => {
+    const defaultContext = {
+      prefix: 0,
+      current: 0,
+    };
+    const IdContext = React.createContext(defaultContext);
+
+    function useId(defaultId) {
+      const context = React.useContext(IdContext);
+      return React.useMemo(
+        () => defaultId || `id-${context.prefix}-${++context.current}`,
+        [defaultId, context],
+      );
+    }
+
+    const element = document.createElement('div');
+    document.body.innerHTML = element;
+    const Test = () => {
+      const a = useId();
+      const b = useId();
+
+      return (
+        <div>
+          {a}
+          {b}
+        </div>
+      );
+    };
+
+    const App = () => (
+      <React.StrictMode>
+        <Test />
+      </React.StrictMode>
+    );
+
+    ReactDOM.render(<App />, element);
+    expect(element.innerHTML).toBe('<div>id-0-3id-0-4</div>');
+  });
+
+  it('should warn id difference if SSR & StrictMode', () => {
+    const {StrictMode} = React;
+
+    let defaultContext = {
+      prefix: 0,
+      current: 0,
+    };
+    const IdContext = React.createContext(defaultContext);
+
+    function useId(defaultId) {
+      const context = React.useContext(IdContext);
+      return React.useMemo(
+        () => defaultId || `id-${context.prefix}-${++context.current}`,
+        [defaultId, context],
+      );
+    }
+
+    const TestComponent = () => {
+      const a = useId();
+
+      return <div>{a}</div>;
+    };
+    const App = () => (
+      <StrictMode>
+        <TestComponent />
+      </StrictMode>
+    );
+    const element = document.createElement('div');
+    element.id = 'root';
+    element.innerHTML = ReactDOMServer.renderToString(<App />);
+    expect(element.innerHTML).toBe('<div>id-0-1</div>');
+    document.body.innerHTML = element;
+    defaultContext = {
+      prefix: 0,
+      current: 0,
+    };
+    expect(() => {
+      ReactDOM.hydrate(<App />, element);
+      // }).toErrorDev('Text content did not match. Server: "x" Client: "y"');
+    }).toErrorDev(
+      'Warning: Text content did not match. Server: "id-0-1" Client: "id-0-3"',
+    );
+
+    ReactDOM.render(<App />, element);
+    expect(element.innerHTML).toBe('<div>id-0-3</div>');
+  });
+
+  it('may have held different order in rendering', () => {});
+
+  const App = () => (
+    <>
+      <React.Suspense>
+        <div>1</div>
+      </React.Suspense>
+      <React.Suspense>
+        <div>2</div>
+      </React.Suspense>
+    </>
+  );
 });
